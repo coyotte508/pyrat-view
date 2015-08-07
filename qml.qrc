@@ -1,5 +1,7 @@
 <RCC>
     <qresource prefix="/">
         <file>main.qml</file>
+        <file>coins.txt</file>
+        <file>maze.txt</file>
     </qresource>
 </RCC>
