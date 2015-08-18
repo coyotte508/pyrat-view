@@ -1,26 +1,17 @@
 import QtQuick 2.2
 import QtQuick.Window 2.1
+import QtQuick.Layouts 1.1
+import QtQuick.Particles 2.0
 
 Window {
     visible: true
-    width: 800
+    width: 1050
     height: 650
 
     property var maze: ({})
     property var coins: ({})
-
-    MouseArea {
-        anchors.fill: parent
-        onClicked: {
-            Qt.quit();
-        }
-    }
-
-    Text {
-        text: qsTr("Hello World")
-        anchors.centerIn: parent
-    }
-
+    property var p1Pos: ({x: 0, y: 24})
+    property var p2Pos: ({x: 24, y: 0})
 
     function wallTop(index) {
         return wallCheck(index, 0, -1);
@@ -61,6 +52,7 @@ Window {
 //            Text {
 //                text: index
 //                anchors.centerIn: parent
+//                font.pointSize: 8
 //            }
 
             Rectangle {
@@ -105,14 +97,6 @@ Window {
         }
     }
 
-    GridView {
-        id: grid
-        delegate: gridDelegate
-        cellHeight: 25
-        cellWidth: 25
-        model:0
-    }
-
     function getSize(maze) {
         var w = 0;
         var h = 0;
@@ -147,7 +131,10 @@ Window {
     }
 
     function loadData(fileName) {
-        var data = io.getFile(fileName);
+        return loadDataStr(io.getFile(fileName));
+    }
+
+    function loadDataStr(data) {
         data = data.replace(/\(([^)]*),[ ]*([^)]*)\):/g, '"$1x$2":');
         data = data.replace(/\(/g, "[");
         data = data.replace(/\)/g, "]");
@@ -174,5 +161,94 @@ Window {
         grid.model = size.w * size.h;
 
         console.log(JSON.stringify(size));
+
+        io.p1Moved.connect(function(x, y) {p1Pos = {"x": x, "y": y};});
+        io.p2Moved.connect(function(x, y) {p2Pos = {"x": x, "y": y};});
+        io.coinsUpdated.connect(function(coinsStr) {
+            var coins = loadDataStr(coinsStr);
+            this.coins = ({});
+
+            for (var x in coins) {
+                this.coins[coordsToInt(coins[x])] = true;
+            }
+        });
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        Text {
+            id: score1
+            anchors.verticalCenter: parent.verticalCenter
+            font.pointSize: 28
+            text: "Score p1"
+            width: 200
+        }
+
+        GridView {
+            id: grid
+            delegate: gridDelegate
+            cellHeight: 25
+            cellWidth: 25
+            width: 650
+            model:0
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.left: score1.right
+
+            Rectangle {
+                id: p1
+                x: p1Pos.x * grid.cellWidth + 5
+                y: p1Pos.y * grid.cellHeight + 5
+                width : grid.cellWidth - 10
+                height: grid.cellHeight - 10
+                color: "black"
+            }
+
+            Rectangle {
+                id: p2
+                property real prop: 1
+                x: p2Pos.x * grid.cellWidth * prop + 5
+                y: p2Pos.y * grid.cellHeight + 5
+                width : grid.cellWidth - 10
+                height: grid.cellHeight - 10
+                color: "blue"
+                z: 100
+
+                SequentialAnimation {
+                    loops: Animation.Infinite
+                    running: true
+                    NumberAnimation { target: p2; property: "prop"; duration: 5000; easing.type: Easing.Linear; to: 0 }
+                    NumberAnimation { target: p2; property: "prop"; duration: 5000; easing.type: Easing.Linear; to: 1 }
+                }
+            }
+
+            ParticleSystem {
+                z: 99
+
+                Emitter {
+                    x: p2.x
+                    y: p2.y
+                    width: p2.width
+                    height: p2.height
+                    group: "A"
+                    emitRate: 50
+                    lifeSpan: 1500
+                    //velocityFromMovement: -100
+                }
+
+
+                ImageParticle {
+                    source: "qrc:/lightparticle2.png"
+                    groups: "A"
+                }
+            }
+        }
+
+        Text {
+            anchors.left: grid.right
+            font.pointSize: 28
+            width: 200
+            text: "Score p2"
+            anchors.verticalCenter: parent.verticalCenter
+        }
     }
 }

@@ -3,5 +3,6 @@
         <file>main.qml</file>
         <file>coins.txt</file>
         <file>maze.txt</file>
+        <file>lightparticle2.png</file>
     </qresource>
 </RCC>
